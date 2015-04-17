@@ -250,22 +250,11 @@ void step(space& sp, string& logfname, string& datafname){
 
 void getschparam(string schparamfname, int& nstepmax, double& tmax, int& frequency){
 	ifstream schparam(schparamfname.c_str());
-	if(!schparam){
-		std::cerr<<"function 'getchparam' cannot open file "<<schparamfname<<'\n';
-		return;
-	}
-	string s;
-	getline(schparam, s);
-	stringstream ss2(s);
-	ss2>>tmax;
-	ss2.clear();
-	getline(schparam, s);
-	ss2.str(s);
-	ss2>>nstepmax;
-	ss2.clear();
-	getline(schparam, s);
-	ss2.str(s);
-	ss2>>frequency;
+	if(!schparam){		std::cerr<<"function 'getchparam' cannot open file "<<schparamfname<<'\n';		return;	}
+	string s;	
+	getline(schparam, s);	stringstream ss2(s);	ss2>>tmax;		ss2.clear();	
+	getline(schparam, s);	ss2.str(s);				ss2>>nstepmax;	ss2.clear();	
+	getline(schparam, s);	ss2.str(s);				ss2>>frequency;
 	schparam.close();
 	std::cerr<<tmax<<'\t'<<nstepmax<<'\t'<<frequency<<'\n';
 	return;
@@ -275,7 +264,7 @@ int main(int argc, char* argv[]){
 	std::cerr<<"started\n";
 	double t, tmax;
 	int nstep, nstepmax, frequency, npro, myid;
-	string gridfname, cellfname, schparamfname, initvalfname, logfname, datafname, statefname;
+	std::string gridfname, cellfname, schparamfname, initvalfname, logfname, datafname, statefname;
 	
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &npro);
@@ -284,27 +273,12 @@ int main(int argc, char* argv[]){
 	std::cerr<<"reading files\n";
 	findfilenames(gridfname, cellfname, initvalfname, schparamfname, logfname, datafname, statefname);
 	std::cerr<<"reading grid\n";
-	ifstream grid(gridfname.c_str());
-	if(!grid){
-		std::cerr<<"grid fails file "<<gridfname<<"\n";
-		exit(1);
-	}
-	grid.close();
 	space sp(gridfname, "ob");
-	//if(argv[1][0] == 'c'){
-	//	sp.restore(statefname, t, nstep);
-	//}
-	//else{
 	std::cerr<<"creating space\n";
-		sp.fillspace(initvalfname);
-		nstep = 0;
-		t = 0.;
-		
-	//}
+	sp.fillspace(initvalfname);
+	nstep = 0;
+	t = 0.;
 	getschparam(schparamfname, nstepmax, tmax,frequency);	
-	ofstream logfile(logfname.c_str());
-	//sp.showall(logfile);
-	logfile.close();
 	sp.deltat = 0.1;
 	while(t < tmax && nstep < nstepmax){
 		std::cerr<<"step "<<nstep<<'\n';
@@ -321,21 +295,11 @@ int main(int argc, char* argv[]){
 			s2.append(ss.str());
 			sp.savestate(s2, t, tmax, nstep, nstepmax);
 		}
-		
-		//string s1;
-		//s1.assign(datafname);
-		//s1.append(".dat");
-		//sp.savedata(s1);
 		step(sp, logfname, datafname);
 		if(nstep == 0){sp.stopheat();}
-		std::cerr<<"time step "<<sp.deltat<<'\n';
-		
-		if(t < 1e-5){
-			std::cerr<<"t damaged\n";
-		}
-		if(sp.deltat < 1e-5){
-			std::cerr<<"deltast damaged\n";
-		}
+		std::cerr<<"time step "<<sp.deltat<<'\n';		
+		if(t < 1e-5){			std::cerr<<"t damaged\n";		}
+		if(sp.deltat < 1e-5){			std::cerr<<"deltast damaged\n";		}
 		nstep = nstep + 1;		
 	}
 	MPI_Finalize();
