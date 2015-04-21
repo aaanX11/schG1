@@ -10,6 +10,8 @@
 #include <stdexcept>
 #include <algorithm>
 
+void heat(int* size, double* xpoints, double* ypoints, double* zpoints, const std::string& scoordfname, const std::string& svalfname, double* hsource);
+
 void readgrid(double* coord, const std::string& gridfname,const int& size,const std::string& axis){
 	double tmp;
 	std::string s;
@@ -64,7 +66,7 @@ void readgridaxis(const std::string& gridfname, int* size){
 	return;
 }
 
-void findfilenames(std::string &gridfname, std::string &cellfname, std::string &initvalfname, std::string &schparamfname, std::string &logfname, std::string &datafname, std::string& ivfilename){
+void findfilenames(std::string &gridfname, std::string &cellfname, std::string &initvalfname, std::string &schparamfname, std::string &logfname, std::string &datafname, std::string& ivfilename, std::string &coord, std::string& val){
 	std::ifstream perenos("perenos");
 	if(!perenos){
 		std::cerr<<"function 'findfilenames' cannot open file perenos\n";
@@ -93,6 +95,8 @@ void findfilenames(std::string &gridfname, std::string &cellfname, std::string &
 	logfname.assign("log");
 	datafname.assign("data");
 	ivfilename.assign("state");
+	coord.assign("grid.lst");
+	val.assign("grid.res");
 	return;
 }
 
@@ -345,35 +349,19 @@ void f7(int* size, int* layers, double* density, double* xvelosity, double* yvel
 	return;
 }
 
-void heat(int* size, double* xpoints, double* ypoints, double* zpoints, const std::string& scoordfname, const std::string& svalfname, double* hsource){
-	std::ifstream scoord(scoordfname.c_str());
-	std::ifstream sval(svalfname.c_str());
-	if(!scoord){std::cout<<"Cannot open file '"<<scoord<<"'. Consider no heat sources.\n";return;}
-	if(!sval){std::cout<<"Cannot open file '"<<sval<<"'. Consider no heat sources.\n";return;}
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	int IX, IY, IZ, NX, NY, NZ, ixr, iyr, izr;//<--- variables not 
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	double *engridx, *engridy, *engridz;
-	ixr = 0;
-	for(int IX = 0; IX < NX; IX++){
-		while(xpoints[ixr] < engridx[IX]){ixr++;}
-		iyr = 0;
-		for(int IY = 0; IY < NY; IY++){
-			while(ypoints[iyr] < engridy[IY]){iyr++;}
-			izr = 0;
-			for(int IZ = 0; IZ < NZ; IX++){
-				while(zpoints[izr] < engridz[IZ]){izr++;}
-				sval>>Q;
-				for(; ix < ixr; ix++){
-					for(;iy < iyr; iy++){
-						for(;iz < izr; iz++){
-							hsource[iz + iy*nny + ix*nnx] = Q;
-						}
-					}
-				}
-
-			}	
-		}	
+void heat(int* size, double* hsource){
+	int nx, ny, nz, nny, nnx;
+	nx = size[0];
+	ny = size[1];
+	nz = size[2];
+	nny = nz;
+	nnx = nz*ny;
+	for(int ix = 0; ix < nx; ix++){
+		for(int iy = (int)(ny/4); iy < ny; iy++){
+			for(int iz = 0; iz < nz; iz++){
+				hsource[iz + iy*nny + ix*nnx] = 1.0;
+			}
+		}
 	}
 }
 
@@ -444,6 +432,15 @@ void write(const std::string& initvalfname, int* size, int* layers, double* dens
 			ivfile<<'\n';
 		}
 	}
+	for(int ix = 0; ix < nx; ix++){
+		for(int iy = 0; iy < ny; iy++){
+			for(int iz = 0; iz < nz; iz++){
+				ivfile<<hsource[iz + iy*nny + ix*nnx];
+				ivfile<<'\t';
+			}
+			ivfile<<'\n';
+		}
+	}
 	ivfile.close();
 }
 
@@ -451,7 +448,7 @@ typedef void (*pf)(int*, int*, double*, double*, double*, double*, double*, doub
 
 void main(){
 	int size[3], *layers, desc;
-	double *density, *xvelosity, *yvelosity, *zvelosity, *pressure;
+	double *density, *xvelosity, *yvelosity, *zvelosity, *pressure, *hsource;
 	std::string gridfname, datafname, cellfname, initvalfname, schparamfname, logfname, ivfilename, scoordfname, svalfname;
 	std::cout<<"Choose a model:\n";
 	std::cout<<"1 - still air, closed box\n";
@@ -475,7 +472,7 @@ void main(){
 	pressure = new double[size[0]*size[1]*size[2]];
 	hsource = new double[size[0]*size[1]*size[2]];
 	(f[desc-1])(size, layers, density, xvelosity, yvelosity, zvelosity, pressure, hsource);
-	std::cout<<"looking for heat source in files '"<<scoordfname<<", "<<svalname<<"'\n";
-	heat(size, scoordfname, svalfname, hsource);
+	std::cout<<"looking for heat source in files '"<<scoordfname<<", "<<svalfname<<"'\n";
+	heat(size,hsource);
 	write(initvalfname, size, layers, density, xvelosity, yvelosity, zvelosity, pressure, hsource);
 }
