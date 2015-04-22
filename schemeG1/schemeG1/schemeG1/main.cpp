@@ -174,7 +174,7 @@ void step(space& sp, string& logfname, string& datafname){
 					sp.getcellsize(lin, ix, iy, iz);
 					for(int iaxis = 0; iaxis < 3; iaxis++){
 						axisattr(iaxis, ix, iy, iz, nx, ny, nz, stepbehind, stepforward, minusdirect,facebehind, direct, iter, tan1, tan2);
-						if(sp.layers[index + stepbehind] == -1 || (iaxis == 1 && iy == 1)){	
+						if(sp.layers[index + stepbehind] == -1 /*|| (iaxis == 1 && iy == 1)*/){	
 							//cell behind belongs to an obstacle area 
 							sp.getriemparam(par, minusdirect, ix, iy, iz);
 							riemi(par, &alarm);
@@ -188,9 +188,9 @@ void step(space& sp, string& logfname, string& datafname){
 							bigval[facebehind+3] = U[tan1];
 							bigval[facebehind+4] = U[tan2];							
 						}
-						if(iaxis == 1 && iy == ny -2 && sp.layers[index + stepforward] != -1){sp.getriemparam(par, "Yend", ix, iy, iz);}
-						else{
-						sp.getriemparam(par, direct, ix, iy, iz);}
+						//if(iaxis == 1 && iy == ny -2 && sp.layers[index + stepforward] != -1){sp.getriemparam(par, "Yend", ix, iy, iz);}
+						//else{
+						sp.getriemparam(par, direct, ix, iy, iz);//}
 						riemi(par, &alarm);
 						if(alarm){
 							std::cerr<<"function 'riemi' sends an alarm at ("<<ix<<" "<<iy<<" "<<iz<<'\n';}
@@ -283,7 +283,7 @@ int main(int argc, char* argv[]){
 	while(t < tmax && nstep < nstepmax){
 		std::cerr<<"step "<<nstep<<'\n';
 		t = t + sp.deltat;
-		if(nstep%frequency == 0){
+		if(nstep%frequency == 0 || nstep < 10){
 			stringstream ss;
 			string s1, s2;
 			ss<<nstep;

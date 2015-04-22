@@ -365,7 +365,6 @@ void space::getcellsize(double* lin, int ix, int iy, int iz){
 	return;
 }
 void space::tanvel(double* Ures, double s2, int tan1, int tan2, const string&  towards, int ix, int iy, int iz){
-	//std::cerr<<"tanvel\n";
 	int nx, ny, nz, nny, nnx, index;
 	double *U = new double[6];
 	nx = size[0];	ny = size[1];	nz = size[2];
@@ -373,7 +372,7 @@ void space::tanvel(double* Ures, double s2, int tan1, int tan2, const string&  t
 	index = iz + iy*nny + ix*nnx;
 	if(ix >= nx || iy >= ny || iz >= nz){		std::cerr<<"function 'tanvel' index out of range\n";	}
 	U[0] = xvelosity[index];	U[1] = yvelosity[index];	U[2] = zvelosity[index];
-	if(towards.length()>1){		
+	if(towards.length()>1){		//backward
 		if(s2 <= 0){
 				Ures[0] = U[tan1];
 				Ures[1] = U[tan2];}
@@ -388,14 +387,14 @@ void space::tanvel(double* Ures, double s2, int tan1, int tan2, const string&  t
 				case 'Z':
 					U[3] = xvelosity[index-1];	U[4] = yvelosity[index -1];	U[5] = zvelosity[index -1];
 					break;
-				default:
+				default://case end of empty tube, towards = "Yend"
 					U[3] = xvelosity[index];	U[4] = yvelosity[index];	U[5] = zvelosity[index];
 			}
 			Ures[0] = U[3+tan1];
 			Ures[1] = U[3+tan2];
 		}
 	}
-	else{		
+	else{		//forward
 		if(s2 >= 0){		Ures[0] = U[tan1]; Ures[1] = U[tan2];}
 		else{
 			switch(towards[0]){
