@@ -222,7 +222,8 @@ void step(space& sp, string& logfname, string& datafname){
 							sigma[isig] + sp.deltat*(	
 								(Q[isig]-Q[5+isig])/lin[0] 
 								+ (Q[10+isig]-Q[10+5+isig])/lin[1] 
-								+ (Q[20+isig]-Q[20+5+isig])/lin[2]	)	+ sp.source[index];}
+								+ (Q[20+isig]-Q[20+5+isig])/lin[2]	);}
+					sigma[4] += sp.source[index];
 					//-gas properties update-
 					sp.density[index] = sigma[0];
 					sp.xvelosity[index] = sigma[1]/sigma[0];
@@ -283,7 +284,7 @@ int main(int argc, char* argv[]){
 	while(t < tmax && nstep < nstepmax){
 		std::cerr<<"step "<<nstep<<'\n';
 		t = t + sp.deltat;
-		if(nstep%frequency == 0 || nstep < 10){
+		if(nstep%frequency == 0 || nstep < 50){
 			stringstream ss;
 			string s1, s2;
 			ss<<nstep;

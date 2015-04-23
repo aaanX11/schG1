@@ -509,7 +509,7 @@ void space::savedata(string& datafname){
 	nny = nz;	nnx = nz*ny;
 	datafile<<"VARIABLES = \"X\", \"Y\", \"Z\", \"R\", \"U\", \"V\",\"W\", \"P\", \"L\", \"Q\"\n";
 	datafile<<"ZONE F=BLOCK I= "<<nx-1<<" J= "<<ny-1<<" K = "<<nz-1<<'\n';
-	datafile<<"VARLOCATION=([4-9]=CELLCENTERED)\n";
+	datafile<<"VARLOCATION=([4-10]=CELLCENTERED)\n";
 	for(int iz = 1; iz < nz; iz++){	
 		for(int iy = 1; iy < ny; iy++){
 			for(int ix = 1; ix < nx; ix++){		

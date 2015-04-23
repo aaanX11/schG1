@@ -10,33 +10,9 @@
 #include <stdexcept>
 #include <algorithm>
 
-void heat(int* size, double* xpoints, double* ypoints, double* zpoints, const std::string& scoordfname, const std::string& svalfname, double* hsource);
-
-void readgrid(double* coord, const std::string& gridfname,const int& size,const std::string& axis){
-	double tmp;
-	std::string s;
-	std::stringstream ss;
-	std::ifstream grid;
-	grid.open(gridfname.c_str(),std::ifstream::in);
-	if(!grid){
-		std::cerr<<"function 'readgrid' cannot open file "<<gridfname<<'\n';
-		exit(1);
-	}
-	while(getline(grid, s) != NULL && s[0] != axis[0]){	}
-	getline(grid, s);
-	getline(grid, s);
-	ss.str(s);
-	for(int i = 0; i < size + 1; i++){
-		ss>>tmp;
-		coord[i] = tmp;
-	}	
-	ss.clear();
-	grid.close();
-	return;
-}
-
-void readgridaxis(const std::string& gridfname, int* size){
+void processgrid(const std::string& gridfname, double** x, double** y, double** z, int* size){
 	int n;
+	double tmp, *coord1, *coord2, *coord3;
 	std::string s;
 	std::stringstream ss;
 	std::ifstream grid(gridfname.c_str());
@@ -44,25 +20,27 @@ void readgridaxis(const std::string& gridfname, int* size){
 		std::cerr<<"function 'readgridaxis' cannot open file "<<gridfname<<'\n';
 		exit(1);
 	}
+	//----------------------X------------------------
 	while(getline(grid, s) != NULL && s[0] != 'X'){	}
-	getline(grid, s);
-	ss.str(s);
-	ss>>n;
-	size[0] = n+2;
-	ss.clear();
+	getline(grid, s);	ss.str(s);	ss>>n;size[0] = n+2;	ss.clear();
+	coord1 = new double[n+1];
+	getline(grid, s);	ss.str(s);
+	for(int i = 0; i < n + 1; i++){		ss>>tmp;		coord1[i] = tmp;	}	
+	*x = coord1;	ss.clear();
+	//----------------------Y------------------------
 	while(getline(grid, s) != NULL && s[0] != 'Y'){	}
-	getline(grid, s);
-	ss.str(s);
-	ss>>n;
-	size[1] = n+2;
-	ss.clear();
+	getline(grid, s);	ss.str(s);	ss>>n;size[1] = n+2;	ss.clear();
+	coord2 = new double[n+1];
+	getline(grid, s);	ss.str(s);
+	for(int i = 0; i < n + 1; i++){		ss>>tmp;		coord2[i] = tmp;	}	
+	*y = coord2;	ss.clear();
+	//----------------------Z------------------------
 	while(getline(grid, s) != NULL && s[0] != 'Z'){	}
-	getline(grid, s);
-	ss.str(s);
-	ss>>n;
-	size[2] = n+2;
-	ss.clear();
-	grid.close();
+	getline(grid, s);	ss.str(s);	ss>>n;size[2] = n+2;	ss.clear();
+	coord3 = new double[n+1];
+	getline(grid, s);	ss.str(s);
+	for(int i = 0; i < n + 1; i++){		ss>>tmp;		coord3[i] = tmp;	}	
+	*z = coord3;	ss.clear();
 	return;
 }
 
@@ -357,7 +335,7 @@ void heat(int* size, double* hsource){
 	nny = nz;
 	nnx = nz*ny;
 	for(int ix = 0; ix < nx; ix++){
-		for(int iy = (int)(ny/4); iy < ny; iy++){
+		for(int iy = 0; iy < (int)(ny/4); iy++){
 			for(int iz = 0; iz < nz; iz++){
 				hsource[iz + iy*nny + ix*nnx] = 1.0;
 			}
@@ -365,19 +343,13 @@ void heat(int* size, double* hsource){
 	}
 }
 
-void write(const std::string& initvalfname, int* size, int* layers, double* density, double* xvelosity, double* yvelosity, double* zvelosity, double* pressure, double* hsource){
-	std::ofstream ivfile(initvalfname.c_str());
-	if(!ivfile){
-		std::cerr<<"Can't write to "<<initvalfname<<'\n';
-		return;
-	}
+void writeinit(const std::string& initvalfname, int* size, int* layers, double* density, double* xvelosity, double* yvelosity, double* zvelosity, double* pressure, double* hsource){
+	std::ofstream ivfile("initval");
+	std::ofstream datafile("init.dat");
 	std::string s;
 	int nx, ny, nz, nny, nnx;
-	nx = size[0];
-	ny = size[1];
-	nz = size[2];
-	nny = nz;
-	nnx = nz*ny;
+	nx = size[0];	ny = size[1];	nz = size[2];
+	nny = nz;	nnx = nz*ny;
 	for(int ix = 0; ix < nx; ix++){
 		for(int iy = 0; iy < ny; iy++){
 			for(int iz = 0; iz < nz; iz++){
@@ -443,12 +415,106 @@ void write(const std::string& initvalfname, int* size, int* layers, double* dens
 	}
 	ivfile.close();
 }
-
+void writedat(const std::string& datafname,const int* size, const int* layers,const double* density,const double* xvelosity,const double* yvelosity,const double* zvelosity,const double* pressure,const double* hsource,const double* xpoints,const double* ypoints,const double* zpoints){
+	std::ofstream datafile(datafname.c_str());
+	int nx, ny, nz, nny, nnx;
+	nx = size[0];	ny = size[1];	nz = size[2];
+	nny = nz;	nnx = nz*ny;
+	datafile<<"VARIABLES = \"X\", \"Y\", \"Z\", \"R\", \"U\", \"V\",\"W\", \"P\", \"L\", \"Q\"\n";
+	datafile<<"ZONE F=BLOCK I= "<<nx-1<<" J= "<<ny-1<<" K = "<<nz-1<<'\n';
+	datafile<<"VARLOCATION=([4-10]=CELLCENTERED)\n";
+	for(int iz = 1; iz < nz; iz++){	
+		for(int iy = 1; iy < ny; iy++){
+			for(int ix = 1; ix < nx; ix++){		
+				datafile<<xpoints[ix-1]<<'\t';
+				
+			}
+			datafile<<'\n';
+		}
+	}
+	for(int iz = 1; iz < nz; iz++){
+	
+		for(int iy = 1; iy < ny; iy++){
+				for(int ix = 1; ix < nx; ix++){		
+				datafile<<ypoints[iy-1]<<'\t';
+				
+			}
+			datafile<<'\n';
+		}
+	}
+	for(int iz = 1; iz < nz; iz++){
+	
+		for(int iy = 1; iy < ny; iy++){
+				for(int ix = 1; ix < nx; ix++){		
+				datafile<<zpoints[iz-1]<<'\t';
+				
+			}
+			datafile<<'\n';
+		}
+	}
+	for(int iz = 1; iz < nz-1; iz++){
+	
+		for(int iy = 1; iy < ny-1; iy++){
+				for(int ix = 1; ix < nx-1; ix++){
+				datafile<<density[iz+iy*nny+ix*nnx]<<'\t';			}
+			datafile<<'\n';
+		}
+	}
+	for(int iz = 1; iz < nz-1; iz++){
+	
+		for(int iy = 1; iy < ny-1; iy++){
+				for(int ix = 1; ix < nx-1; ix++){
+				datafile<<xvelosity[iz+iy*nny+ix*nnx]<<'\t';			}
+			datafile<<'\n';
+		}
+	}
+	for(int iz = 1; iz < nz-1; iz++){
+	
+		for(int iy = 1; iy < ny-1; iy++){
+				for(int ix = 1; ix < nx-1; ix++){
+				datafile<<yvelosity[iz+iy*nny+ix*nnx]<<'\t';			}
+			datafile<<'\n';
+		}
+	}
+	for(int iz = 1; iz < nz-1; iz++){
+	
+		for(int iy = 1; iy < ny-1; iy++){
+				for(int ix = 1; ix < nx-1; ix++){
+				datafile<<zvelosity[iz+iy*nny+ix*nnx]<<'\t';			}
+			datafile<<'\n';
+		}
+	}
+	for(int iz = 1; iz < nz-1; iz++){
+	
+		for(int iy = 1; iy < ny-1; iy++){
+				for(int ix = 1; ix < nx-1; ix++){
+				datafile<<pressure[iz+iy*nny+ix*nnx]<<'\t';			}
+			datafile<<'\n';
+		}
+	}
+	for(int iz = 1; iz < nz-1; iz++){
+	
+		for(int iy = 1; iy < ny-1; iy++){
+				for(int ix = 1; ix < nx-1; ix++){
+				datafile<<layers[iz+iy*nny+ix*nnx]<<'\t';			}
+			datafile<<'\n';
+		}
+	}
+	for(int iz = 1; iz < nz-1; iz++){
+	
+		for(int iy = 1; iy < ny-1; iy++){
+				for(int ix = 1; ix < nx-1; ix++){
+				datafile<<hsource[iz+iy*nny+ix*nnx]<<'\t';			}
+			datafile<<'\n';
+		}
+	}
+	datafile.close();
+}
 typedef void (*pf)(int*, int*, double*, double*, double*, double*, double*, double*);
 
 void main(){
 	int size[3], *layers, desc;
-	double *density, *xvelosity, *yvelosity, *zvelosity, *pressure, *hsource;
+	double *density, *xvelosity, *yvelosity, *zvelosity, *pressure, *hsource, *x, *y , *z;
 	std::string gridfname, datafname, cellfname, initvalfname, schparamfname, logfname, ivfilename, scoordfname, svalfname;
 	std::cout<<"Choose a model:\n";
 	std::cout<<"1 - still air, closed box\n";
@@ -460,7 +526,8 @@ void main(){
 	//7 from cell file
 	std::cin>>desc;
 	findfilenames(gridfname, cellfname, initvalfname, schparamfname, logfname, datafname, ivfilename, scoordfname, svalfname);
-	readgridaxis(gridfname, size);
+	x = new double[]; y = new double[]; z = new double[];
+	processgrid(gridfname, &x, &y, &z, size);
 	if(size[0] > 1000 || size[0] < 1 || size[1] > 1000 || size[1] < 1 || size[2] > 1000 || size[2] < 1){exit(1);}
 	std::cout<<"space size: "<<size[0]<<" "<<size[1]<<" "<<size[2]<<'\n';
 	pf f[]= {&f1, &f2, &f3, &f4, &f5, &f6};
@@ -472,7 +539,9 @@ void main(){
 	pressure = new double[size[0]*size[1]*size[2]];
 	hsource = new double[size[0]*size[1]*size[2]];
 	(f[desc-1])(size, layers, density, xvelosity, yvelosity, zvelosity, pressure, hsource);
-	std::cout<<"looking for heat source in files '"<<scoordfname<<", "<<svalfname<<"'\n";
+	//std::cout<<"looking for heat source in files '"<<scoordfname<<", "<<svalfname<<"'\n";
 	heat(size,hsource);
-	write(initvalfname, size, layers, density, xvelosity, yvelosity, zvelosity, pressure, hsource);
+	writeinit("initval", size, layers, density, xvelosity, yvelosity, zvelosity, pressure, hsource);
+	writedat("init.dat", size, layers, density, xvelosity, yvelosity, zvelosity, pressure, hsource, x, y, z);
+
 }
