@@ -297,7 +297,7 @@ int main(int argc, char* argv[]){
 			sp.savestate(s2, t, tmax, nstep, nstepmax);
 		}
 		step(sp, logfname, datafname);
-		if(nstep == 0){sp.stopheat();}
+		if(nstep == 10){sp.stopheat();}
 		std::cerr<<"time step "<<sp.deltat<<'\n';		
 		if(t < 1e-5){			std::cerr<<"t damaged\n";		}
 		if(sp.deltat < 1e-5){			std::cerr<<"deltast damaged\n";		}

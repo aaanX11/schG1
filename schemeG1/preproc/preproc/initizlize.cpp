@@ -337,7 +337,7 @@ void heat(int* size, double* hsource){
 	for(int ix = 0; ix < nx; ix++){
 		for(int iy = 0; iy < (int)(ny/4); iy++){
 			for(int iz = 0; iz < nz; iz++){
-				hsource[iz + iy*nny + ix*nnx] = 1.0;
+				hsource[iz + iy*nny + ix*nnx] = 0.1;
 			}
 		}
 	}
