@@ -207,13 +207,42 @@ void space::fillspace(const string& ivfname){
 	}
 	ivfile.close();
 }
-void space::getriemparam(double* param, const string&  towards, int ix, int iy, int iz){ 
+void space::getriemparam(double* param, double* der, const string&  towards, int ix, int iy, int iz){ 
 	int nx, ny, nz, nny, nnx, index;
 	nx = size[0];	ny = size[1];	nz = size[2];
 	nny = nz; nnx = ny*nz;
 	index = iz + iy*nny + ix*nnx;
 	if(ix >= nx || iy >= ny || iz >= nz){		std::cerr<<"function 'getriemparam' index out of range\n";	}
-	if(towards.length()>1){
+	dif_x[0] = density[index + nnx] - density[index];
+	dif_x[0] = density[index + 2*nnx] - density[index + nnx]
+	dif_x[0] = density[index] - density[index - nnx];
+	dif_x[1] = xvelosity[index + nnx] - xvelosity[index];
+	dif_x[1] = xvelosity[index + 2*nnx] - xvelosity[index + nnx]
+	dif_x[1] = xvelosity[index] - xvelosity[index - nnx];
+	dif_x[2] = pressure[index + nnx] - pressure[index];
+	dif_x[2] = pressure[index + 2*nnx] - pressure[index + nnx]
+	dif_x[2] = pressure[index] - pressure[index - nnx];
+
+	dif_y_r[index]
+	dif_y_r[index + nny]
+	dif_y_r[index - nny]
+	dif_y_u[index]
+	dif_y_u[index + nny]
+	dif_y_u[index - nny]
+	dif_y_p[index]
+	dif_y_p[index + nny]
+	dif_y_p[index - nny]
+
+	dif_z_r[index]
+	dif_z_r[index + nnz]
+	dif_z_r[index - nnz]
+	dif_z_u[index]
+	dif_z_u[index + nnz]
+	dif_z_u[index - nnz]
+	dif_z_p[index]
+	dif_z_p[index + nnz]
+	dif_z_p[index - nnz]
+	if(towards.length()>1){//backward
 		switch(towards[1]){
 			case 'X':
 				if(layers[index - nnx] != 0){
@@ -284,21 +313,26 @@ void space::getriemparam(double* param, const string&  towards, int ix, int iy, 
 				param[5] = pressure[index];
 		}
 	}
-	else{
+	else{//forward
 		switch(towards[0]){
 			case 'X':
 				if(layers[index + nnx] != 0){
 					//obstacle
-					
-					param[0] = density[index];
-					param[1] = xvelosity[index];			
-					param[2] = pressure[index];
-					param[3] = density[index];
-					param[4] = -xvelosity[index];
-					param[5] = pressure[index];
+					Uminus[0] = density[index] + 0.5*dx*dif_r[index];
+					Uminus[1] = xvelosity[index] + 0.5*dx*dif_u[index];
+					Uminus[2] = pressure[index] + 0.5*dx*dif_p[index];
+					param[3] = param[0];
+					param[4] = -param[1];
+					param[5] = param[2];
 				}
 				else{
 					//gas	
+					Uminus[0] = density[index] + 0.5*dx*dif_r[index];
+					Uminus[1] = xvelosity[index] + 0.5*dx*dif_u[index];
+					Uminus[2] = pressure[index] + 0.5*dx*dif_p[index];
+					Uminus[3] = density[index + nnx] - 0.5*dx*dif_r[index + nnx];
+					Uminus[4] = xvelosity[index + nnx] - 0.5*dx*dif_u[index + nnx];
+					Uminus[5] = pressure[index + nnx] - 0.5*dx*dif_p[index + nnx];
 					param[0] = density[index];
 					param[1] = xvelosity[index];
 					param[2] = pressure[index];
